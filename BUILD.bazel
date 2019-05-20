@@ -1,0 +1,10 @@
+# vim: set syntax=bzl :
+
+java_binary(
+    name = "mvntobzl",
+    main_class = "mvntobzl.App",
+    visibility = ["//visibility:public"],
+    runtime_deps = ["//src/mvntobzl:lib"],
+)
+
+

@@ -1,0 +1,88 @@
+# vim: set syntax=bzl :
+
+load("@io_bazel_rules_kotlin//kotlin:kotlin.bzl", "kt_jvm_test")
+
+kt_jvm_test(
+    name = "GraphTestCase",
+    srcs = ["GraphTestCase.kt"],
+    test_class = "mvntobzl.GraphTestCase",
+    deps = [
+        "//src/mvntobzl:lib",
+        "@com_github_jetbrains_kotlin//:kotlin-test",
+        "@maven//:org_jetbrains_kotlin_kotlin_test_junit",
+        "@maven//:junit_junit",
+        "@maven//:com_google_guava_guava",
+    ],
+    size = "small",
+)
+
+kt_jvm_test(
+    name = "BazelTestCase",
+    srcs = ["BazelTestCase.kt"],
+    test_class = "mvntobzl.BazelTestCase",
+    deps = [
+        "//src/mvntobzl:lib",
+        "@com_github_jetbrains_kotlin//:kotlin-test",
+        "@maven//:org_jetbrains_kotlin_kotlin_test_junit",
+        "@maven//:junit_junit",
+    ],
+    size = "small",
+)
+
+kt_jvm_test(
+    name = "TranslationTestCase",
+    srcs = ["TranslationTestCase.kt"],
+    test_class = "mvntobzl.TranslationTestCase",
+    deps = [
+        "//src/mvntobzl:lib",
+        "@com_github_jetbrains_kotlin//:kotlin-test",
+        "@maven//:org_jetbrains_kotlin_kotlin_test_junit",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_maven_maven_core",
+        "@maven//:org_apache_maven_maven_resolver_provider",
+        "@maven//:org_apache_maven_maven_model_builder",
+        "@maven//:org_apache_maven_maven_model",
+        "@maven//:org_apache_maven_resolver_maven_resolver_api",
+        "@maven//:org_apache_maven_resolver_maven_resolver_spi",
+        "@maven//:org_apache_maven_resolver_maven_resolver_util",
+        "@maven//:org_apache_maven_resolver_maven_resolver_impl",
+        "@maven//:org_apache_maven_resolver_maven_resolver_connector_basic",
+        "@maven//:org_apache_maven_resolver_maven_resolver_transport_file",
+        "@maven//:org_apache_maven_resolver_maven_resolver_transport_http",
+        "@maven//:javax_inject_javax_inject",
+        "@maven//:org_eclipse_sisu_org_eclipse_sisu_inject",
+        "@maven//:org_sonatype_sisu_sisu_guice",
+        "@maven//:org_slf4j_slf4j_api",
+        "@maven//:org_slf4j_slf4j_simple",
+    ],
+    size = "small",
+)
+
+kt_jvm_test(
+    name = "ResolverTestCase",
+    srcs = ["ResolverTestCase.kt"],
+    test_class = "mvntobzl.ResolverTestCase",
+    deps = [
+        "//src/mvntobzl:lib",
+        "@com_github_jetbrains_kotlin//:kotlin-test",
+        "@maven//:org_jetbrains_kotlin_kotlin_test_junit",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_maven_maven_core",
+        "@maven//:org_apache_maven_maven_resolver_provider",
+        "@maven//:org_apache_maven_maven_model_builder",
+        "@maven//:org_apache_maven_maven_model",
+        "@maven//:org_apache_maven_resolver_maven_resolver_api",
+        "@maven//:org_apache_maven_resolver_maven_resolver_spi",
+        "@maven//:org_apache_maven_resolver_maven_resolver_util",
+        "@maven//:org_apache_maven_resolver_maven_resolver_impl",
+        "@maven//:org_apache_maven_resolver_maven_resolver_connector_basic",
+        "@maven//:org_apache_maven_resolver_maven_resolver_transport_file",
+        "@maven//:org_apache_maven_resolver_maven_resolver_transport_http",
+        "@maven//:javax_inject_javax_inject",
+        "@maven//:org_eclipse_sisu_org_eclipse_sisu_inject",
+        "@maven//:org_sonatype_sisu_sisu_guice",
+        "@maven//:org_slf4j_slf4j_api",
+        "@maven//:org_slf4j_slf4j_simple",
+    ],
+    size = "small",
+)
