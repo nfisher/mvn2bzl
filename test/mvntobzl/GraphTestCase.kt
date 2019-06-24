@@ -14,7 +14,6 @@ const val HAS_DEPENDENCY: String = "hasDependency"
 const val BELONGS_TO_DEPENDENT: String = "belongsToDependent"
 
 class GraphTestCase {
-
     @Test
     fun `neo4j graph the things`() {
         
@@ -106,7 +105,7 @@ interface ProjectNode {
     val type: String
 }
 
+data class ClassNode(val name: String, val isPublic: Boolean,  override val type: String = "class") : ProjectNode
+data class FileNode(val path: String, val ext: String, override val type: String = "file") : ProjectNode
 data class ModuleNode(val path: String, val groupId: String, val artifactId: String, val version: String, override val type: String = "module") : ProjectNode
 data class PackageNode(val name: String, override val type: String = "package") : ProjectNode
-data class FileNode(val path: String, val ext: String, override val type: String = "file") : ProjectNode
-data class ClassNode(val name: String, val isPublic: Boolean,  override val type: String = "class") : ProjectNode

@@ -21,14 +21,14 @@ http_archive(
     strip_prefix = "protobuf-3.8.0",
     urls = ["https://github.com/protocolbuffers/protobuf/archive/v3.8.0.tar.gz"],
     sha256 = "03d2e5ef101aee4c2f6ddcf145d2a04926b9c19e7086944df3842b1b8502b783",
-    )
+)
 
 http_archive(
     name = "com_google_protobuf_java",
     strip_prefix = "protobuf-3.8.0",
     urls = ["https://github.com/protocolbuffers/protobuf/archive/v3.8.0.tar.gz"],
     sha256 = "03d2e5ef101aee4c2f6ddcf145d2a04926b9c19e7086944df3842b1b8502b783",
-    )
+)
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
@@ -39,17 +39,17 @@ http_archive(
     name = "bazel_skylib",
     urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/0.8.0/bazel-skylib.0.8.0.tar.gz"],
     sha256 = "2ef429f5d7ce7111263289644d233707dba35e39696377ebab8b0bc701f7818e",
-    )
+)
 
 # download rules_jvm_external
-RULES_JVM_EXTERNAL_TAG = "2.1"
-RULES_JVM_EXTERNAL_SHA = "515ee5265387b88e4547b34a57393d2bcb1101314bcc5360ec7a482792556f42"
+RULES_JVM_EXTERNAL_TAG = "2.2"
+RULES_JVM_EXTERNAL_SHA = "f1203ce04e232ab6fdd81897cf0ff76f2c04c0741424d192f28e65ae752ce2d6"
 http_archive(
     name = "rules_jvm_external",
     sha256 = RULES_JVM_EXTERNAL_SHA,
     strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
     url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
-    )
+)
 load("@rules_jvm_external//:defs.bzl", "maven_install")
 load("@rules_jvm_external//:specs.bzl", "maven")
 
@@ -97,6 +97,7 @@ fun genBuild(workspaceRoot: String, modulePath: String?, depList: MutableSet<Dep
     buildFile.printWriter().use { pw ->
         pw.println("""
             java_library(
+                name = "$libName",
                 srcs = glob(["src/main/java/**/*.java"]),
                 visibility = ["//visibility:public"],
                 deps = [
@@ -111,16 +112,15 @@ fun genBuild(workspaceRoot: String, modulePath: String?, depList: MutableSet<Dep
                 if (depFilename != null) {
                     val relPath = pomPathToWorkspace(depFilename, workspaceRoot)
                     val depName = toBazelPath(it.artifact.artifactId)
-                    pw.println("    \"//$relPath:$depName\",")
+                    pw.println("        \"//$relPath:$depName\",")
                 } else {
-                    pw.println("    \"@maven//:${artifactToPath(it.artifact)}\",")
+                    pw.println("        \"@maven//:${artifactToPath(it.artifact)}\",")
                 }
             }
         }
         pw.println("""
-                ],
-                name = "$libName",
-            )
+            ],
+        )
         """.trimIndent())
     }
 
