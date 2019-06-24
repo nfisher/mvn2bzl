@@ -1,0 +1,15 @@
+# vim: set syntax=bzl :
+
+load("@io_bazel_rules_kotlin//kotlin:kotlin.bzl", "kt_jvm_test")
+
+kt_jvm_test(
+    name = "WorkspaceTestCase",
+    srcs = ["WorkspaceTestCase.kt"],
+    test_class = "mvntobzl.io.WorkspaceTestCase",
+    deps = [
+        "//src/mvntobzl/io:lib",
+        "@com_github_jetbrains_kotlin//:kotlin-test",
+        "@maven//:junit_junit",
+    ],
+    size = "small",
+)

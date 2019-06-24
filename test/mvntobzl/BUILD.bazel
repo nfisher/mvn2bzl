@@ -3,26 +3,12 @@
 load("@io_bazel_rules_kotlin//kotlin:kotlin.bzl", "kt_jvm_test")
 
 kt_jvm_test(
-    name = "WorkspaceTestCase",
-    srcs = ["WorkspaceTestCase.kt"],
-    test_class = "mvntobzl.WorkspaceTestCase",
-    deps = [
-        "//src/mvntobzl:lib",
-        "@com_github_jetbrains_kotlin//:kotlin-test",
-        "@maven//:org_jetbrains_kotlin_kotlin_test_junit",
-        "@maven//:junit_junit",
-    ],
-    size = "small",
-)
-
-kt_jvm_test(
     name = "GraphTestCase",
     srcs = ["GraphTestCase.kt"],
     test_class = "mvntobzl.GraphTestCase",
     deps = [
         "//src/mvntobzl:lib",
         "@com_github_jetbrains_kotlin//:kotlin-test",
-        "@maven//:org_jetbrains_kotlin_kotlin_test_junit",
         "@maven//:junit_junit",
         "@maven//:com_google_guava_guava",
     ],
@@ -36,7 +22,6 @@ kt_jvm_test(
     deps = [
         "//src/mvntobzl:lib",
         "@com_github_jetbrains_kotlin//:kotlin-test",
-        "@maven//:org_jetbrains_kotlin_kotlin_test_junit",
         "@maven//:junit_junit",
     ],
     size = "small",
@@ -49,7 +34,6 @@ kt_jvm_test(
     deps = [
         "//src/mvntobzl:lib",
         "@com_github_jetbrains_kotlin//:kotlin-test",
-        "@maven//:org_jetbrains_kotlin_kotlin_test_junit",
         "@maven//:junit_junit",
         "@maven//:org_apache_maven_maven_core",
         "@maven//:org_apache_maven_maven_resolver_provider",
@@ -78,7 +62,6 @@ kt_jvm_test(
     deps = [
         "//src/mvntobzl:lib",
         "@com_github_jetbrains_kotlin//:kotlin-test",
-        "@maven//:org_jetbrains_kotlin_kotlin_test_junit",
         "@maven//:junit_junit",
         "@maven//:org_apache_maven_maven_core",
         "@maven//:org_apache_maven_maven_resolver_provider",
