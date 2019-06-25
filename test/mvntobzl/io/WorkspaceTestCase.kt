@@ -24,7 +24,7 @@ class WorkspaceTestCase {
             ".git/config",
             "target/Formatter.class",
             "bazel-out/Formatter.class"
-            )
+    ).sorted()
 
     var workspacePath: Path? = null
 
@@ -47,7 +47,7 @@ class WorkspaceTestCase {
     @After
     fun tearDown() {
         if (null == workspacePath) {
-            val path:Path = workspacePath!!
+            val path: Path = workspacePath!!
             Files.walk(path)
                     .asSequence()
                     .sortedDescending()
@@ -57,7 +57,7 @@ class WorkspaceTestCase {
     }
 }
 
-internal fun genWorkspace(workspacePath:Path, filenames:List<String>):BlockingQueue<String> {
+internal fun genWorkspace(workspacePath: Path, filenames: List<String>): BlockingQueue<String> {
     for (filename in filenames) {
         val f = File(workspacePath.toFile(), filename)
         val dir = f.parent

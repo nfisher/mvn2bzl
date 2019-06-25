@@ -3,19 +3,6 @@
 load("@io_bazel_rules_kotlin//kotlin:kotlin.bzl", "kt_jvm_test")
 
 kt_jvm_test(
-    name = "GraphTestCase",
-    srcs = ["GraphTestCase.kt"],
-    test_class = "mvntobzl.GraphTestCase",
-    deps = [
-        "//src/mvntobzl:lib",
-        "@com_github_jetbrains_kotlin//:kotlin-test",
-        "@maven//:junit_junit",
-        "@maven//:com_google_guava_guava",
-    ],
-    size = "small",
-)
-
-kt_jvm_test(
     name = "BazelTestCase",
     srcs = ["BazelTestCase.kt"],
     test_class = "mvntobzl.BazelTestCase",

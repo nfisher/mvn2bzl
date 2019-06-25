@@ -24,7 +24,7 @@ class App {
                     Repository("central", "default", "http://localhost:8081/repository/maven-central/")
             )
 
-            val walker = resolve(modules,"/Users/nfisher/.m2/repository", repositories)
+            val walker = resolve(modules, "/Users/nfisher/.m2/repository", repositories)
 
             val artifacts = walker.artifacts.toTypedArray()
 
@@ -32,10 +32,10 @@ class App {
 
             println("")
             println(" ".repeat(40) +
-                COMPILE.padStart(10, ' ') +
-                PROVIDED.padStart(10, ' ') +
-                RUNTIME.padStart(10, ' ') +
-                TEST.padStart(10, ' '))
+                    COMPILE.padStart(10, ' ') +
+                    PROVIDED.padStart(10, ' ') +
+                    RUNTIME.padStart(10, ' ') +
+                    TEST.padStart(10, ' '))
             println("~".repeat(80))
             walker.moduleDeps.toSortedMap().forEach { (id, depList) ->
                 val pomFilename = modules.idsToFilenames[id]

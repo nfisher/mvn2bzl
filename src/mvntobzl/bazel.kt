@@ -133,6 +133,6 @@ fun genBuild(workspaceRoot: String, modulePath: String?, depList: MutableSet<Dep
             paddedPrint(counts, TEST))
 }
 
-fun paddedPrint(counts:MutableMap<String, Int>, key:String):String {
-   return counts.getOrDefault(key, 0).toString().padStart(10, ' ')
+fun paddedPrint(counts: MutableMap<String, Int>, key: String): String {
+    return counts.getOrDefault(key, 0).toString().padStart(10, ' ')
 }

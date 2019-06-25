@@ -2,7 +2,7 @@ package mvntobzl
 
 import org.eclipse.aether.artifact.Artifact
 
-fun pomPathToWorkspace(depFilename: String, workspaceRoot: String):String {
+fun pomPathToWorkspace(depFilename: String, workspaceRoot: String): String {
     if (depFilename == "$workspaceRoot/pom.xml") {
         return ""
     }
