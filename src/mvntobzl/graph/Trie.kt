@@ -1,8 +1,10 @@
 package mvntobzl.graph
 
+import kotlin.reflect.KClass
+
 class Trie<T>(var value: T? = null, private val children: MutableMap<String, Trie<T>> = mutableMapOf()) {
     // insert adds the provided value into the trie with keys. If it already exists it will return false.
-    fun insert(keys: Array<String>, value: T): Boolean {
+    fun insert(keys: List<String>, value: T): Boolean {
         var parent: Trie<T> = this
         for (k in keys) {
             if (null == parent.children[k]) {
@@ -20,7 +22,7 @@ class Trie<T>(var value: T? = null, private val children: MutableMap<String, Tri
         return true
     }
 
-    fun find(keys: Array<String>): T? {
+    fun find(keys: List<String>): T? {
         var parent: Trie<T> = this
 
         for (k in keys) {
@@ -34,7 +36,7 @@ class Trie<T>(var value: T? = null, private val children: MutableMap<String, Tri
     }
 
     // longestMatch will find the longest matching non-null value or null if none.
-    fun longestMatch(keys: Array<String>): T? {
+    fun longestMatch(keys: List<String>): T? {
         var parent: Trie<T> = this
         var value: T? = parent.value
 
@@ -50,5 +52,27 @@ class Trie<T>(var value: T? = null, private val children: MutableMap<String, Tri
         }
 
         return value
+    }
+
+    fun longestTypedMatch(keys: List<String>, clazz: KClass<*>): T? {
+        var parent: Trie<T> = this
+        var value: T? = null
+
+        for (k in keys) {
+            if (null == parent.children[k]) {
+                break
+            }
+
+            parent = parent.children[k]!!
+            if (null != parent.value && clazz.isInstance(parent.value)) {
+                value = parent.value
+            }
+        }
+
+        return value
+    }
+
+    fun size(): Int {
+        return children.size
     }
 }

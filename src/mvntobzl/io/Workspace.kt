@@ -32,7 +32,6 @@ class WalkerTexasRanger(private val start: Path, private val q: BlockingQueue<St
         val filename = dir.fileName
         for (ignorePrefix in ignorePrefixes) {
             if (filename.toString().startsWith(ignorePrefix)) {
-                println("dotfile")
                 return SKIP_SUBTREE
             }
         }
