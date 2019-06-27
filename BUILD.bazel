@@ -7,4 +7,9 @@ java_binary(
     runtime_deps = ["//src/mvntobzl:lib"],
 )
 
+java_library(
+    name = "resources",
+    visibility = ["//visibility:public"],
+    resources = glob(["resources/**/*"]),
+)
 

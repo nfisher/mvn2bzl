@@ -1,2 +1,14 @@
+# This is from Bazel's former travis setup, to avoid blowing up the RAM usage.
+startup --batch_cpu_scheduling
+startup --io_nice_level 7
+startup --macos_qos_class="user-interactive"
+
+build --verbose_failures
+#build --jobs 24 # number of runners to launch
 build --strategy=KotlinCompile=worker
+
+
+test --test_output=errors # only output errors
+#test --jobs 24 # number of runners to launch
+test --action_env="GTEST_COLOR=1"
 test --strategy=KotlinCompile=worker

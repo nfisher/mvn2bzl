@@ -1,18 +1,14 @@
 package mvntobzl.graph
 
-import com.google.common.graph.MutableValueGraph
-import com.google.common.graph.ValueGraphBuilder
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
+import org.jgrapht.graph.SimpleGraph
 import org.junit.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import org.jgrapht.Graphs.addEdge
+import org.jgrapht.graph.SimpleDirectedGraph
 
-const val BELONGS_TO_MODULE: String = "belongsToModule"
-const val BELONGS_TO_FILE: String = "belongsToFile"
-const val BELONGS_TO_PACKAGE: String = "belongsToPackage"
-const val HAS_FILE: String = "hasFile"
-const val HAS_PACKAGE: String = "hasPackage"
-const val HAS_CLASS: String = "hasClass"
-const val HAS_DEPENDENCY: String = "hasDependency"
-const val BELONGS_TO_DEPENDENT: String = "belongsToDependent"
 
 /*
 Assumption:
@@ -39,33 +35,32 @@ Assumption:
                  └─ package (cached)
                      └─ class
 
-NodeList
+Effects
 
     {
       path: metrics/pom.xml,
       nodes: [
-          File(path: metrics/pom.xml, mediaType: xml, sha: "123ABC..."),
+          File(path: metrics/pom.xml, mediaType: xml, sha256: "123ABC..."),
           Module(path: metrics, groupId: com.instana.com, artifactId: metrics, version: 1.0.0-SNAPSHOT),
       ]
       relationships: [
-          { from: Module, rel: HAS_FILE, to: File },
-          { from: File, rel: BELONGS_TO_MODULE, to: Module },
+          { a: Module, b: File },
       ]
     }
 
     {
         path: metrics/src/main/java/com/instana/metrics/Formatter.java,
         nodes: [
-            File(path: metrics/src/main/java/com/instana/metrics/Formatter.java, mediaType: javaSrc, sha: "ABC123..."),
+            File(path: metrics/src/main/java/com/instana/metrics/Formatter.java, mediaType: javaSrc, sha256: "ABC123..."),
             Module(path: metrics, groupId: com.instana.com, artifactId: metrics, version: 1.0.0-SNAPSHOT),
             Package(name: com.instana.metrics),
             Class(name: com.instana.metrics.Formatter, source: java),
         ],
         relationships: [
-            { from: Module, rel: HAS_A, to: Package },
-            { from: Package, rel: BELONGS_TO, to: Module },
-            { from: Package, rel: HAS_A, to: Class },
-            { from: Class, rel: BELONGS_TO, to: Package },
+            { a: Module, b: Package },
+            { a: Package, b: Class },
+            { a: File, b: Class },
+            { a: Class, b: Package },
         ]
     }
 
@@ -77,7 +72,7 @@ Events (maybe?)
     { event: "added_package", path:String, node:PackageNode }
     { event: "added_class", path:String, node:ClassNode }
 
-GraphDispatcher(val q:BlockingQueue) {
+EventHandler(val q:BlockingQueue) {
 
     // add a receiver to the dispatcher
     addReceiver(receiver:NodeReceiver)
@@ -90,6 +85,8 @@ GraphDispatcher(val q:BlockingQueue) {
 
     // stop the event loop (blocking)
     stop()
+
+    applyEffects()
 }
 
 interface NodeReceiver {
@@ -100,11 +97,31 @@ interface NodeReceiver {
 class GraphTestCase {
 
     @Test
-    fun `build workspace graph`() {
-        val graph: MutableValueGraph<ProjectNode, String> = ValueGraphBuilder
-                .directed()
-                .allowsSelfLoops(false)
-                .build()
+    fun `build workspace jgrapht`() {
+        val g: Graph<String, DefaultEdge> = SimpleDirectedGraph(DefaultEdge::class.java)
+        val v1 = "v1"
+        val v2 = "v2"
+        val v3 = "v3"
+        val v4 = "v4"
+
+        // add the vertices
+        g.addVertex(v1)
+        g.addVertex(v2)
+        g.addVertex(v3)
+        g.addVertex(v4)
+
+        // add edges to create a circuit
+        g.addEdge(v1, v2)
+        g.addEdge(v2, v3)
+        g.addEdge(v3, v4)
+        g.addEdge(v4, v1)
+
+        assertNotNull(g)
+    }
+
+    @Test
+    fun `build workspace guava graph`() {
+        val graph = newWorkspace()
 
         val metrics = ModuleNode(path = "metrics", groupId = "com.instana", artifactId = "metrics", version = "1.0.0-SNAPSHOT")
         val metricsPom = FileNode(path = "metrics/pom.xml", mediaType = "xml")
@@ -117,20 +134,20 @@ class GraphTestCase {
         val metricDescription = FileNode(path = "metrics/src/main/java/com/instana/metrics/catalog/MetricDescription.java", mediaType = "java")
         val metricDescriptionClass = ClassNode(name = "com.instana.metrics.catalog.MetricDescription", isPublic = true)
 
-        addFileToModule(graph, metricsPom, metrics)
+        add(graph, metricsPom, metrics)
 
-        addPackageToModule(graph, metricsPackage, metrics)
-        addFileToPackage(graph, metricsFormatter, metricsPackage)
-        addClassToPackage(graph, metricsFormatterClass, metricsPackage)
-        addClassToFile(graph, metricsFormatterClass, metricsFormatter)
+        add(graph, metricsPackage, metrics)
+        add(graph, metricsFormatter, metricsPackage)
+        add(graph, metricsFormatterClass, metricsPackage)
+        add(graph, metricsFormatterClass, metricsFormatter)
 
-        addPackageToModule(graph, catalogPackage, metrics)
+        add(graph, catalogPackage, metrics)
 
-        addFileToPackage(graph, metricDescription, catalogPackage)
-        addClassToPackage(graph, metricDescriptionClass, catalogPackage)
-        addClassToFile(graph, metricDescriptionClass, metricDescription)
+        add(graph, metricDescription, catalogPackage)
+        add(graph, metricDescriptionClass, catalogPackage)
+        add(graph, metricDescriptionClass, metricDescription)
 
-        addClassImport(graph, metricDescription, metricsFormatterClass)
+        add(graph, metricDescription, metricsFormatterClass)
 
         assertEquals(6, graph.degree(metrics), "modules degree")
         assertEquals(2, graph.degree(metricsPom), "pom degree")
@@ -151,41 +168,3 @@ class GraphTestCase {
  RETURN m, dep
 */
 
-fun addClassImport(g: MutableValueGraph<ProjectNode, String>, f: FileNode, c: ClassNode) {
-    g.putEdgeValue(f, c, HAS_DEPENDENCY)
-    g.putEdgeValue(c, f, BELONGS_TO_DEPENDENT)
-}
-
-fun addFileToModule(g: MutableValueGraph<ProjectNode, String>, f: FileNode, m: ModuleNode) {
-    g.putEdgeValue(m, f, HAS_FILE)
-    g.putEdgeValue(f, m, BELONGS_TO_MODULE)
-}
-
-fun addPackageToModule(g: MutableValueGraph<ProjectNode, String>, p: PackageNode, m: ModuleNode) {
-    g.putEdgeValue(m, p, HAS_PACKAGE)
-    g.putEdgeValue(p, m, BELONGS_TO_MODULE)
-}
-
-fun addClassToPackage(g: MutableValueGraph<ProjectNode, String>, c: ClassNode, p: PackageNode) {
-    g.putEdgeValue(p, c, HAS_CLASS)
-    g.putEdgeValue(c, p, BELONGS_TO_PACKAGE)
-}
-
-fun addFileToPackage(g: MutableValueGraph<ProjectNode, String>, f: FileNode, p: PackageNode) {
-    g.putEdgeValue(p, f, HAS_FILE)
-    g.putEdgeValue(f, p, BELONGS_TO_PACKAGE)
-}
-
-fun addClassToFile(g: MutableValueGraph<ProjectNode, String>, c: ClassNode, f: FileNode) {
-    g.putEdgeValue(f, c, HAS_CLASS)
-    g.putEdgeValue(c, f, BELONGS_TO_FILE)
-}
-
-interface ProjectNode {
-    val type: String
-}
-
-data class ClassNode(val name: String, val isPublic: Boolean, override val type: String = "class") : ProjectNode
-data class FileNode(val path: String, val mediaType: String, override val type: String = "file") : ProjectNode
-data class ModuleNode(val path: String, val groupId: String, val artifactId: String, val version: String, override val type: String = "module") : ProjectNode
-data class PackageNode(val name: String, override val type: String = "package") : ProjectNode

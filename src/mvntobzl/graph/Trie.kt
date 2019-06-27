@@ -3,6 +3,7 @@ package mvntobzl.graph
 import kotlin.reflect.KClass
 
 class Trie<T>(var value: T? = null, private val children: MutableMap<String, Trie<T>> = mutableMapOf()) {
+
     // insert adds the provided value into the trie with keys. If it already exists it will return false.
     fun insert(keys: List<String>, value: T): Boolean {
         var parent: Trie<T> = this

@@ -7,10 +7,11 @@ kt_jvm_test(
     srcs = ["GraphTestCase.kt"],
     test_class = "mvntobzl.graph.GraphTestCase",
     deps = [
-        #"//src/mvntobzl:lib",
+        "//src/mvntobzl/graph:lib",
         "@com_github_jetbrains_kotlin//:kotlin-test",
-        "@maven//:junit_junit",
         "@maven//:com_google_guava_guava",
+        "@maven//:org_jgrapht_jgrapht_core",
+        "@maven//:junit_junit",
     ],
     size = "small",
 )
@@ -22,7 +23,6 @@ kt_jvm_test(
     deps = [
         "//src/mvntobzl/graph:lib",
         "@com_github_jetbrains_kotlin//:kotlin-test",
-        "@com_github_jetbrains_kotlin//:kotlin-reflect",
         "@maven//:junit_junit",
     ],
     size = "small",
