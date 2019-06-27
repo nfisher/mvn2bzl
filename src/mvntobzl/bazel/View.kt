@@ -2,18 +2,17 @@ package mvntobzl.bazel
 
 import freemarker.template.Configuration
 import freemarker.template.TemplateExceptionHandler
-import java.io.StringWriter
 import java.io.Writer
 import java.util.concurrent.ConcurrentHashMap
 
-fun renderBuild(cfg: Configuration, input: Build, out: StringWriter) {
+fun renderBuild(cfg: Configuration, input: Build, out: Writer) {
     val tpl = cfg.getTemplate("BUILD.bazel.ftlh")
     val root = ConcurrentHashMap<String, Any>()
     root["build"] = input as Any
     tpl.process(root, out)
 }
 
-fun renderMavenDependencies(cfg: Configuration, input: MavenDependencies, out: StringWriter) {
+fun renderMavenDependencies(cfg: Configuration, input: MavenDependencies, out: Writer) {
     val tpl = cfg.getTemplate("maven.bzl.ftlh")
     val root = ConcurrentHashMap<String, Any>()
     root["maven"] = input as Any
@@ -54,7 +53,7 @@ data class HttpArchive(val name: String, val prefix: String = "", val sha256: St
 data class MavenArtifact(val groupId: String, val artifactId: String, val version: String)
 data class MavenDependencies(val repositories: List<MavenRepo>, val artifacts: List<MavenArtifact>)
 data class MavenRepo(val url: String)
-data class Workspace(val name: String)
+data class Workspace(val name: String, val archives: List<HttpArchive> = emptyList(), val repositories: List<MavenRepo> = emptyList())
 data class WorkspaceDependency(val workspace: String, val target: String)
 
 fun defaultRepos(): List<HttpArchive> {

@@ -1,85 +1,46 @@
 package mvntobzl
 
+import freemarker.template.Configuration
+import mvntobzl.bazel.*
+import mvntobzl.bazel.renderWorkspace
 import org.eclipse.aether.artifact.Artifact
 import org.eclipse.aether.graph.Dependency
 import org.eclipse.aether.util.artifact.JavaScopes.*
 import java.io.File
+import java.io.FileWriter
 import java.nio.file.Paths
 
-fun genWorkspace(workspace: String, idsToArtifacts: MutableMap<String, Artifact>) {
-    val ws = File(Paths.get(workspace, "WORKSPACE.tmp").toString())
-    ws.printWriter().use {
-        it.print("""
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-# proto_library, cc_proto_library, and java_proto_library rules implicitly
-# depend on @com_google_protobuf for protoc and proto runtimes.
-# This statement defines the @com_google_protobuf repo.
-http_archive(
-    name = "com_google_protobuf",
-    strip_prefix = "protobuf-3.8.0",
-    urls = ["https://github.com/protocolbuffers/protobuf/archive/v3.8.0.tar.gz"],
-    sha256 = "03d2e5ef101aee4c2f6ddcf145d2a04926b9c19e7086944df3842b1b8502b783",
-)
-
-http_archive(
-    name = "com_google_protobuf_java",
-    strip_prefix = "protobuf-3.8.0",
-    urls = ["https://github.com/protocolbuffers/protobuf/archive/v3.8.0.tar.gz"],
-    sha256 = "03d2e5ef101aee4c2f6ddcf145d2a04926b9c19e7086944df3842b1b8502b783",
-)
-
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-
-protobuf_deps()
-
-# skylib required by protobuf
-http_archive(
-    name = "bazel_skylib",
-    urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/0.8.0/bazel-skylib.0.8.0.tar.gz"],
-    sha256 = "2ef429f5d7ce7111263289644d233707dba35e39696377ebab8b0bc701f7818e",
-)
-
-# download rules_jvm_external
-RULES_JVM_EXTERNAL_TAG = "2.2"
-RULES_JVM_EXTERNAL_SHA = "f1203ce04e232ab6fdd81897cf0ff76f2c04c0741424d192f28e65ae752ce2d6"
-http_archive(
-    name = "rules_jvm_external",
-    sha256 = RULES_JVM_EXTERNAL_SHA,
-    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
-    url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
-)
-load("@rules_jvm_external//:defs.bzl", "maven_install")
-load("@rules_jvm_external//:specs.bzl", "maven")
-
-maven_install(
-    fetch_sources = False,
-    fail_on_missing_checksum = False,
-    repositories = [
-        maven.repository("http://localhost:8081/repository/instana-private/"),
-        maven.repository("http://localhost:8081/repository/maven-central/"),
-        ],
-    artifacts = [
-
-            """.trimIndent())
-
-        idsToArtifacts
-                .forEach { (_, v) ->
-                    it.println("        maven.artifact(\"${v.groupId}\", \"${v.artifactId}\", \"${v.version}\"),")
-                    if (v.version == "RELEASE") {
-                        println("WARNING: ${v.groupId}:${v.artifactId} is using a RELEASE, this will need to be changed to the artifacts latest version")
-                    }
-                }
-
-        it.print("""
-
-  ],
-)
-
-            """.trimIndent())
+fun genWorkspace(cfg: Configuration, idsToArtifacts: MutableMap<String, Artifact>, root: String, workspace: Workspace) {
+    val repoTmp = Paths.get(root, "repositories.bzl.tmp")
+    FileWriter(repoTmp.toString()).use {
+        renderRepositories(cfg, defaultRepos(), it)
     }
-    ws.renameTo(File(Paths.get(workspace, "WORKSPACE").toString()))
+
+    val wsTmp = Paths.get(root, "WORKSPACE.tmp").toString()
+    FileWriter(wsTmp).use {
+        renderWorkspace(cfg, workspace, it)
+    }
+
+    val artifacts = idsToArtifacts
+            .map { (_, v) -> MavenArtifact(groupId = v.groupId, artifactId = v.artifactId, version = v.version) }
+            .sortedBy { it.groupId + it.artifactId }
+    val depsInput = MavenDependencies(
+            repositories = workspace.repositories,
+            artifacts = artifacts
+    )
+    val depsTmp = Paths.get(root, "maven.bzl.tmp").toString()
+    FileWriter(depsTmp).use {
+        renderMavenDependencies(cfg, depsInput, it)
+    }
+
+    renameTo(root, "WORKSPACE.tmp", "WORKSPACE")
+    renameTo(root, "repositories.bzl.tmp", "repositories.bzl")
+    renameTo(root, "maven.bzl.tmp", "maven.bzl")
+}
+
+fun renameTo(path: String, src: String, dest: String) {
+    val from = File(path, src)
+    from.renameTo(File(path, dest))
 }
 
 val bazelPathRegex = "[-.:]".toRegex()
@@ -88,41 +49,50 @@ fun toBazelPath(s: String): String {
     return bazelPathRegex.replace(s, "_")
 }
 
-fun genBuild(workspaceRoot: String, modulePath: String?, depList: MutableSet<Dependency>, artifactId: String, idsToFilenames: Map<String, String>) {
+fun mapToWd(d: Dependency, idsToFilenames: Map<String, String>, workspaceRoot: String) :WorkspaceDependency {
+    val depId = artifactId(d.artifact)
+    val depFilename = idsToFilenames[depId]
+
+    when {
+        null != depFilename -> {
+            val relPath = pomPathToWorkspace(depFilename, workspaceRoot)
+            val depName = toBazelPath(d.artifact.artifactId)
+            return WorkspaceDependency("", "//$relPath:$depName")
+        }
+        else -> return WorkspaceDependency("@maven", "//:${artifactToPath(d.artifact)}")
+    }
+}
+
+fun genBuild(workspaceRoot: String, modulePath: String?, depList: MutableSet<Dependency>, artifactId: String, idsToFilenames: Map<String, String>, cfg: Configuration) {
     val buildFile = File(modulePath, "BUILD.tmp")
     val destFile = File(modulePath, "BUILD.bazel")
     val libName = toBazelPath(artifactId)
     val counts = mutableMapOf<String, Int>()
+    val libScopes = arrayOf(COMPILE, PROVIDED, RUNTIME)
+    val libDeps = depList
+            .filter { libScopes.contains(it.scope) }
+            .map {
+                mapToWd(it, idsToFilenames, workspaceRoot)
+            }.sortedBy { it.workspace + it.target }
+            .toList()
+    val testLibs = depList
+            .filterNot{ libScopes.contains(it.scope) }
+            .map {
+                mapToWd(it, idsToFilenames, workspaceRoot)
+            }.sortedBy { it.workspace + it.target }
+            .toList()
+    val input = Build(
+            name = libName,
+            libDeps = libDeps,
+            testDeps = libDeps + testLibs + listOf(WorkspaceDependency("", ":${libName}"))
+    )
 
-    buildFile.printWriter().use { pw ->
-        pw.println("""
-            java_library(
-                name = "$libName",
-                srcs = glob(["src/main/java/**/*.java"]),
-                visibility = ["//visibility:public"],
-                deps = [
-        """.trimIndent())
-        depList.sortedBy { dependency -> dependency.toString() }.forEach {
-            val current = counts.getOrDefault(it.scope, 0)
-            counts[it.scope] = current + 1
-
-            if (it.scope == COMPILE || it.scope == PROVIDED || it.scope == RUNTIME) {
-                val depId = artifactId(it.artifact)
-                val depFilename = idsToFilenames[depId]
-                if (depFilename != null) {
-                    val relPath = pomPathToWorkspace(depFilename, workspaceRoot)
-                    val depName = toBazelPath(it.artifact.artifactId)
-                    pw.println("        \"//$relPath:$depName\",")
-                } else {
-                    pw.println("        \"@maven//:${artifactToPath(it.artifact)}\",")
-                }
-            }
-        }
-        pw.println("""
-            ],
-        )
-        """.trimIndent())
+    FileWriter(buildFile).use {
+        renderBuild(cfg, input, it)
     }
+
+    counts[COMPILE] = libDeps.size
+    counts[TEST] = testLibs.size
 
     buildFile.renameTo(destFile)
 

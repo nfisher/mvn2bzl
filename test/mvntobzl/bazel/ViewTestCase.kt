@@ -13,7 +13,6 @@ class ViewTestCase {
         val input: List<HttpArchive> = listOf()
 
         renderRepositories(cfg, input, out)
-
         assertEquals(REPO_EMPTY, out.toString())
     }
 
@@ -24,7 +23,6 @@ class ViewTestCase {
         val input: List<HttpArchive> = defaultRepos()
 
         renderRepositories(cfg, input, out)
-
         assertEquals(REPO_LIST, out.toString())
     }
 
@@ -228,7 +226,7 @@ const val LIB_BUILD_WITH_TESTING_DEPS = """java_library(
 )
 
 java_library(
-    name = "testing_lib",
+    name = "testing",
     exports = [
         "@maven//:junit_junit",
     ],

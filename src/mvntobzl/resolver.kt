@@ -144,7 +144,7 @@ fun resolve(modules: Modules, repoBase: String, repos: List<Repository>): GraphW
     val queue = LinkedBlockingQueue<String>()
     val threads = mutableListOf<Thread>()
 
-    for (i in 1..8) {
+    for (i in 1..1) {
         val t = thread(start = true) {
             while (true) {
                 val id = queue.take()

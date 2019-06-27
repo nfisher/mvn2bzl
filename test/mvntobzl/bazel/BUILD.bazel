@@ -8,8 +8,8 @@ kt_jvm_test(
     test_class = "mvntobzl.bazel.ViewTestCase",
     deps = [
         "//src/mvntobzl/bazel:lib",
-        "@com_github_jetbrains_kotlin//:kotlin-test",
         "@maven//:junit_junit",
+        "@com_github_jetbrains_kotlin//:kotlin-test",
         "@maven//:org_freemarker_freemarker",
     ],
     size = "small",

@@ -17,6 +17,8 @@ SLF4J_VERSION = "1.7.25"
 
 maven_install(
     artifacts = [
+        maven.artifact("commons-cli", "commons-cli", "1.4"),
+        maven.artifact("com.google.code.gson", "gson", "2.8.5"),
         maven.artifact("com.google.guava", "guava", "27.1-jre"),
         maven.artifact("javax.inject", "javax.inject", "1"),
         maven.artifact("junit", "junit", "4.12"),

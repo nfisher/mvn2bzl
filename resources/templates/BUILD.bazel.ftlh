@@ -11,7 +11,7 @@ java_library(
 <#if build.hasTestDeps >
 
 java_library(
-    name = "testing_lib",
+    name = "testing",
     exports = [
 <#list build.testDeps as dep>
         "${dep.workspace}${dep.target}",

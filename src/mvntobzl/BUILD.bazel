@@ -6,6 +6,9 @@ kt_jvm_library(
     name = "lib",
     srcs = glob(["*.kt"]),
     deps = [
+        "//src/mvntobzl/bazel:lib",
+        "@maven//:commons_cli_commons_cli",
+        "@maven//:com_google_code_gson_gson",
         "@maven//:com_google_guava_guava",
         "@maven//:javax_inject_javax_inject",
         "@maven//:org_apache_maven_maven_core",
@@ -20,6 +23,7 @@ kt_jvm_library(
         "@maven//:org_apache_maven_resolver_maven_resolver_transport_http",
         "@maven//:org_apache_maven_resolver_maven_resolver_util",
         "@maven//:org_eclipse_sisu_org_eclipse_sisu_inject",
+        "@maven//:org_freemarker_freemarker",
         "@maven//:org_slf4j_slf4j_api",
         "@maven//:org_slf4j_slf4j_simple",
         "@maven//:org_sonatype_sisu_sisu_guice",
