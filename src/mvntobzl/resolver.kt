@@ -1,6 +1,7 @@
 package mvntobzl
 
 import org.apache.maven.model.Model
+import org.apache.maven.model.Parent
 import org.apache.maven.model.io.DefaultModelReader
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils
 import org.eclipse.aether.DefaultRepositorySystemSession
@@ -50,6 +51,10 @@ fun effectiveId(model: Model): String {
     return "${model.groupId}:${model.artifactId}"
 }
 
+fun effectiveId(p: Parent): String {
+    return "${p.groupId}:${p.artifactId}"
+}
+
 fun pomsInWorkspace(workspace: String, searchDepth: Int): MutableList<String> {
     // TODO: if it's actually multi-module use root pom to identify sub-modules rather than scanning.
     val results: MutableList<String> = mutableListOf()
@@ -90,15 +95,22 @@ fun readAllPoms(listOfPoms: List<String>): Modules {
     val reader = DefaultModelReader()
     val idsToPoms = mutableMapOf<String, Model>()
     val idsToFilenames = mutableMapOf<String, String>()
+
     listOfPoms.forEach { filename ->
         val file = FileReader(filename)
         file.use {
             val model = reader.read(file, null)
             val id = effectiveId(model)
+            val parentVersion: String? = model?.parent?.version
+            val version: String? = model.version ?: parentVersion
+
+            model.version = version
+
             idsToPoms[id] = model
             idsToFilenames[id] = filename
         }
     }
+
     return Modules(idsToPoms.toMap(), idsToFilenames.toMap())
 }
 
@@ -152,7 +164,8 @@ fun resolve(modules: Modules, repoBase: String, repos: List<Repository>): GraphW
                     break
                 }
 
-                val artifact = DefaultArtifact("$id:1.0.0-SNAPSHOT")
+                val version = modules.idsToPoms[id]?.version
+                val artifact = DefaultArtifact("$id:$version")
 
                 val descriptorRequest = ArtifactDescriptorRequest()
                 descriptorRequest.artifact = artifact
@@ -173,13 +186,13 @@ fun resolve(modules: Modules, repoBase: String, repos: List<Repository>): GraphW
 
                 print(".")
             }
-            queue.put("") // ensure other threads receive signal
+            queue.put(POISON_PILL) // ensure other threads receive signal
         }
         threads.add(t)
     }
 
     modules.idsToPoms.forEach { (id, _) -> queue.put(id) }
-    queue.put("") // signal end of queue
+    queue.put(POISON_PILL) // signal end of queue
 
     for (t in threads) {
         t.join()
@@ -188,3 +201,5 @@ fun resolve(modules: Modules, repoBase: String, repos: List<Repository>): GraphW
     println("\u001B[32m DONE\u001B[0m")
     return walker
 }
+
+const val POISON_PILL = ""
