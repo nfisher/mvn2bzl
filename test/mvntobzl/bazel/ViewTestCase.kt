@@ -65,12 +65,11 @@ class ViewTestCase {
         val cfg = newCfg()
         val input = Build(
                 name = "metrics",
-                libDeps = emptyList(),
-                testDeps = emptyList()
+                libDeps = emptyList()
         )
 
         renderBuild(cfg, input, out)
-        assertEquals(LIB_BUILD_NO_DEPS, out.toString())
+        assertEquals(BUILD_WITHOUT_DEPS, out.toString())
     }
 
     @Test
@@ -81,12 +80,11 @@ class ViewTestCase {
                 name = "metrics",
                 libDeps = listOf(
                         WorkspaceDependency("@maven", "//:com_google_guava_guava")
-                ),
-                testDeps = emptyList()
+                )
         )
 
         renderBuild(cfg, input, out)
-        assertEquals(LIB_BUILD_WITH_DEP, out.toString())
+        assertEquals(BUILD_WITH_DEPS, out.toString())
     }
 
     @Test
@@ -105,7 +103,24 @@ class ViewTestCase {
         )
 
         renderBuild(cfg, input, out)
-        assertEquals(LIB_BUILD_WITH_TESTING_DEPS, out.toString())
+        assertEquals(BUILD_WITH_TESTING_DEPS, out.toString())
+    }
+
+    @Test
+    fun `should render BUILD with mainClass`() {
+        val out = StringWriter()
+        val cfg = newCfg()
+        val input = Build(
+                name = "metrics",
+                libDeps = listOf(
+                        WorkspaceDependency("@maven", "//:com_google_guava_guava")
+                ),
+                testDeps = emptyList(),
+                mainClass = "com.instana.MainClass"
+        )
+
+        renderBuild(cfg, input, out)
+        assertEquals(BUILD_WITH_MAIN_CLASS, out.toString())
     }
 }
 
@@ -171,33 +186,27 @@ const val EMPTY_MAVEN = """load("@rules_jvm_external//:defs.bzl", "maven_install
 load("@rules_jvm_external//:specs.bzl", "maven")
 
 def maven_deps():
-    maven_install(
-        artifacts = [
-        ],
-        fail_on_missing_checksum = True,
-        fetch_sources = True,
-        repositories = [
-        ],
-    )
+    print("no maven dependencies in project")
 """
 
 const val JUNIT_MAVEN = """load("@rules_jvm_external//:defs.bzl", "maven_install")
 load("@rules_jvm_external//:specs.bzl", "maven")
 
 def maven_deps():
-    maven_install(
-        artifacts = [
-            maven.artifact("junit", "junit", "4.12"),
-        ],
-        fail_on_missing_checksum = True,
-        fetch_sources = True,
-        repositories = [
-            maven.repository("http://localhost:8081/repository/maven-central/"),
-        ],
+    native.maven_server(
+        name = "default",
+        url = "http://localhost:8081/repository/maven-central/"
     )
+
+    native.maven_jar(
+        name = "junit_junit",
+        artifact = "junit:junit:4.12",
+        server = "default",
+    )
+
 """
 
-const val LIB_BUILD_NO_DEPS = """java_library(
+const val BUILD_WITHOUT_DEPS = """java_library(
     name = "metrics",
     srcs = glob(["src/main/java/**/*.java"]),
     visibility = ["//visibility:public"],
@@ -206,7 +215,7 @@ const val LIB_BUILD_NO_DEPS = """java_library(
 )
 """
 
-const val LIB_BUILD_WITH_DEP = """java_library(
+const val BUILD_WITH_DEPS = """java_library(
     name = "metrics",
     srcs = glob(["src/main/java/**/*.java"]),
     visibility = ["//visibility:public"],
@@ -216,7 +225,7 @@ const val LIB_BUILD_WITH_DEP = """java_library(
 )
 """
 
-const val LIB_BUILD_WITH_TESTING_DEPS = """java_library(
+const val BUILD_WITH_TESTING_DEPS = """java_library(
     name = "metrics",
     srcs = glob(["src/main/java/**/*.java"]),
     visibility = ["//visibility:public"],
@@ -230,5 +239,21 @@ java_library(
     exports = [
         "@maven//:junit_junit",
     ],
+)
+"""
+
+const val BUILD_WITH_MAIN_CLASS = """java_library(
+    name = "metrics",
+    srcs = glob(["src/main/java/**/*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "@maven//:com_google_guava_guava",
+    ],
+)
+
+java_binary(
+    name = "MainClass",
+    main_class = "com.instana.MainClass",
+    deps = [ ":metrics" ],
 )
 """

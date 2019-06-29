@@ -19,3 +19,11 @@ java_library(
     ],
 )
 </#if>
+<#if build.hasMainClass >
+
+java_binary(
+    name = "${build.mainName}",
+    main_class = "${build.mainClass}",
+    deps = [ ":${build.name}" ],
+)
+</#if>

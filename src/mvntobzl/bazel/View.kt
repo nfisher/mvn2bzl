@@ -44,13 +44,28 @@ fun newCfg(): Configuration {
     return cfg
 }
 
-data class Build(val name: String, val libDeps: List<WorkspaceDependency>, val testDeps: List<WorkspaceDependency>) {
+data class Build(val name: String, val libDeps: List<WorkspaceDependency>, val testDeps: List<WorkspaceDependency> = emptyList(), val mainClass: String = "") {
     fun getHasTestDeps(): Boolean {
         return testDeps.isNotEmpty()
     }
+
+    fun getHasMainClass(): Boolean {
+        return mainClass.isNotEmpty()
+    }
+
+    fun getMainName(): String {
+        return mainClass.substringAfterLast(".")
+    }
 }
+
+val bazelPathRegex = "[-.:]".toRegex()
+
 data class HttpArchive(val name: String, val prefix: String = "", val sha256: String, val urls: List<String>)
-data class MavenArtifact(val groupId: String, val artifactId: String, val version: String)
+data class MavenArtifact(val groupId: String, val artifactId: String, val version: String) {
+    fun getBazelPath(): String {
+       return bazelPathRegex.replace("$groupId:$artifactId", "_")
+    }
+}
 data class MavenDependencies(val repositories: List<MavenRepo>, val artifacts: List<MavenArtifact>)
 data class MavenRepo(val url: String)
 data class Workspace(val name: String, val archives: List<HttpArchive> = emptyList(), val repositories: List<MavenRepo> = emptyList())

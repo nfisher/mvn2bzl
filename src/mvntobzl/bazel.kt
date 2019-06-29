@@ -22,7 +22,11 @@ fun genWorkspace(cfg: Configuration, idsToArtifacts: MutableMap<String, Artifact
     }
 
     val artifacts = idsToArtifacts
-            .map { (_, v) -> MavenArtifact(groupId = v.groupId, artifactId = v.artifactId, version = v.version) }
+            .map { (_, a) -> MavenArtifact(
+                    groupId = a.groupId,
+                    artifactId = a.artifactId,
+                    version = a.version
+            )}
             .sortedBy { it.groupId + it.artifactId }
     val depsInput = MavenDependencies(
             repositories = workspace.repositories,
@@ -59,32 +63,52 @@ fun mapToWd(d: Dependency, idsToFilenames: Map<String, String>, workspaceRoot: S
             val depName = toBazelPath(d.artifact.artifactId)
             return WorkspaceDependency("", "//$relPath:$depName")
         }
-        else -> return WorkspaceDependency("@maven", "//:${artifactToPath(d.artifact)}")
+        else -> return WorkspaceDependency("@", "${artifactToPath(d.artifact)}//jar")
     }
 }
+
+val libScopes = arrayOf(COMPILE, PROVIDED, RUNTIME)
 
 fun genBuild(workspaceRoot: String, modulePath: String?, depList: MutableSet<Dependency>, artifactId: String, idsToFilenames: Map<String, String>, cfg: Configuration) {
     val buildFile = File(modulePath, "BUILD.tmp")
     val destFile = File(modulePath, "BUILD.bazel")
     val libName = toBazelPath(artifactId)
     val counts = mutableMapOf<String, Int>()
-    val libScopes = arrayOf(COMPILE, PROVIDED, RUNTIME)
+    val seen = mutableMapOf<String, Boolean>()
     val libDeps = depList
             .filter { libScopes.contains(it.scope) }
-            .map {
-                mapToWd(it, idsToFilenames, workspaceRoot)
-            }.sortedBy { it.workspace + it.target }
-            .toList()
+            .filter {
+                var keep = true
+                val key = it.artifact.groupId + it.artifact.artifactId
+                if (seen[key] == true) {
+                    keep = false
+                }
+                seen[key] = true
+                keep
+            }
+            .map { mapToWd(it, idsToFilenames, workspaceRoot) }
+            .sortedBy { it.workspace + it.target }
+    val seenTest = mutableMapOf<String, Boolean>()
     val testLibs = depList
-            .filterNot{ libScopes.contains(it.scope) }
-            .map {
-                mapToWd(it, idsToFilenames, workspaceRoot)
-            }.sortedBy { it.workspace + it.target }
-            .toList()
+            .filterNot { libScopes.contains(it.scope) }
+            .filter {
+                var keep = true
+                val key = it.artifact.groupId + it.artifact.artifactId
+                if (seenTest[key] == true) {
+                    keep = false
+                }
+                seenTest[key] = true
+                keep
+            }
+            .map { mapToWd(it, idsToFilenames, workspaceRoot) }
+            .sortedBy { it.workspace + it.target }
+
+    val testDeps = testLibs + listOf(WorkspaceDependency("", ":$libName"))
+
     val input = Build(
             name = libName,
             libDeps = libDeps,
-            testDeps = libDeps + testLibs + listOf(WorkspaceDependency("", ":${libName}"))
+            testDeps = testDeps
     )
 
     FileWriter(buildFile).use {
